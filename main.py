@@ -1,3 +1,8 @@
+"""
+    Omni Bot 全向轮 控制程序
+    by: DBin_K
+"""
+
 import struct
 import time
 import json
@@ -53,19 +58,6 @@ def time_diff(last_time=[None]):
         last_time[0] = current_time  # 更新上次调用时间
         return diff  # 返回时间差us
 
-# 计算CRC16校验和
-def crc16(data: bytes) -> int:
-    """计算CRC16校验和"""
-    crc = 0xFFFF  # 初始化CRC值
-    for byte in data:
-        crc ^= byte  # 异或操作
-        for _ in range(8):  # 对每个字节进行8次处理
-            if crc & 0x0001:  # 检查最低位
-                crc >>= 1  # 右移
-                crc ^= 0xA001  # 进行多项式异或
-            else:
-                crc >>= 1  # 右移
-    return crc
 
 async def read_espnow():
     """读取espnow数据并进行解包处理"""
