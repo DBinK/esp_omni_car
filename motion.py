@@ -7,20 +7,14 @@ import time
 import math
 from machine import Pin, PWM  # type: ignore
 
-class Motor:
-    def __init__(self, speed_pin, dir_pin, a_pin, b_pin, PWM_LIMIT=(100, 800)):
+
+class Encoder:
+    def __init__(self, a_pin, b_pin):
         """
-        初始化电机对象
-        @param speed_pin: 电机速度控制引脚
-        @param dir_pin: 电机方向控制引脚
+        初始化编码器对象
         @param a_pin: 编码器A相位输入引脚
         @param b_pin: 编码器B相位输入引脚
         """
-        # 初始化电机控制对象
-        self.PWM_LIMIT = PWM_LIMIT
-        self.motor_dir = Pin(dir_pin, Pin.OUT)            # 方向控制引脚
-        self.motor_speed = PWM(Pin(speed_pin), freq=50)   # 速度控制引脚
-
         self.encoder_a = Pin(a_pin, Pin.IN, Pin.PULL_UP)  # 编码器A相位引脚
         self.encoder_b = Pin(b_pin, Pin.IN, Pin.PULL_UP)  # 编码器B相位引脚
 
@@ -60,8 +54,22 @@ class Motor:
     def get_speed(self):
         # 获取当前速度
         return self.speed
-    
-    def limit_value(self, value, min_value=-3000, max_value=3000):
+
+
+class Motor:
+    def __init__(self, speed_pin, dir_pin, PWM_LIMIT=(100, 800)):
+        """
+        初始化电机对象
+        @param speed_pin: 电机速度控制引脚
+        @param dir_pin: 电机方向控制引脚
+        @param PWM_LIMIT: PWM输出的上下限，默认为(100, 800)
+        """
+        # 初始化电机控制对象
+        self.PWM_LIMIT = PWM_LIMIT
+        self.motor_dir = Pin(dir_pin, Pin.OUT)            # 方向控制引脚
+        self.motor_speed = PWM(Pin(speed_pin), freq=500)   # 速度控制引脚
+
+    def limit_value(self, value, min_value, max_value):
         """限制输入的值在给定的范围内。"""
         return min(max(value, min_value), max_value)
     
