@@ -36,14 +36,18 @@ class RobotController:
         return min(max(value, min_value), max_value)
 
     def move(self, v_y, v_x, v_w):
-        # 限制速度在PWM范围内
+        """
+        v_y: 前后速度
+        v_x: 左右速度
+        v_w: 旋转速度
+        """
+        # 输入值限幅
         v_y = min(max(v_y, -self.PWM_LIMIT), self.PWM_LIMIT)
         v_x = min(max(v_x, -self.PWM_LIMIT), self.PWM_LIMIT)
         v_w = min(max(v_w, -self.PWM_LIMIT), self.PWM_LIMIT)
 
-        # 计算每个轮子的速度
-        R = self.wheel_distance  # 轮子距离机器人中心的距离
-
+        # 逆运动学解算, 计算每个电机的速度
+        R  = self.wheel_distance
         Va = -v_y + R * v_w
         Vb =  v_x * math.cos(math.radians(30)) + v_y * math.sin(math.radians(30)) + R * v_w
         Vc = -v_x * math.cos(math.radians(30)) + v_y * math.sin(math.radians(30)) + R * v_w
