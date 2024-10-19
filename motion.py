@@ -186,7 +186,7 @@ if __name__ == "__main__":
     # robot.motor_r_test(100)
     # robot.motor_b_test(100)
     
-    robot.move(0,0,58/2)
+    robot.move(0,0,1)
 
     # while True:
     #     robot.go_forward(50)

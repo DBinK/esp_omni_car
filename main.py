@@ -32,10 +32,15 @@ sta.active(True)
 sta.disconnect()  # 因为 ESP8266 会自动连接到最后一个接入点
 
 now = espnow.ESPNow()
-now.active(True)       # 连接dk广播地址
-now.add_peer(b'\xff\xff\xff\xff\xff\xff')
+now.active(True)  # 连接dk广播地址
+now.add_peer(b"\xff\xff\xff\xff\xff\xff")
 
 sw = True
+mode = 0 # 0: 默认模式，1: 逆时针小陀螺模式 2: 顺时针小陀螺模式
+rs_sw_last = None
+rs_sw_cnt  = 0
+
+
 def stop_btn_callback(pin):
     global sw
     time.sleep(0.1)
@@ -44,12 +49,15 @@ def stop_btn_callback(pin):
         led.value(not led.value())
         print("停止定时器")  # 不然Thonny无法停止程序
 
+
 stop_btn = Pin(0, Pin.IN, Pin.PULL_UP)
 stop_btn.irq(stop_btn_callback, Pin.IRQ_FALLING)
+
 
 def limit_value(value, min_value=-3000, max_value=3000):
     """限制输入的值在给定的范围内。"""
     return min(max(value, min_value), max_value)
+
 
 def time_diff(last_time=[None]):
     """计算两次调用之间的时间差，单位为微秒。"""
@@ -58,7 +66,7 @@ def time_diff(last_time=[None]):
     if last_time[0] is None:  # 如果是第一次调用，更新last_time
         last_time[0] = current_time
         return 0.000_001  # 防止除零错误
-    
+
     else:  # 计算时间差
         diff = time.ticks_diff(current_time, last_time[0])  # 计算时间差
         last_time[0] = current_time  # 更新上次调用时间
@@ -71,10 +79,14 @@ async def read_espnow():
         # print("正在读取espnow数据...")
         host, msg = now.recv()  # 读取所有可用的数据
         process_espnow_data(msg)  # 处理接收到的数据
-        
+
         await asyncio.sleep(0.001)  # 等待一段时间再检查
 
+
 def process_espnow_data(msg):
+
+    global mode, rs_sw_last, rs_sw_cnt
+
     if msg:
         try:
             data = json.loads(msg)  # 将接收到的消息从 JSON 字符串转换为字典
@@ -84,38 +96,63 @@ def process_espnow_data(msg):
             ly = data.get("ly", 0)
             rx = data.get("rx", 0)
             ry = data.get("ry", 0)
-            
-            lx -= 90
-            ly -= 70
+            rs_sw = data.get("rs", True)
+
+            lx -= 0
+            ly -= 0
             rx -= 0
             ry -= 0
-            
+
             print(f"接收到 espnow 数据: lx={lx}, ly={ly}, rx={rx}, ry={ry}")
-            
-            DEAD_AREA = 120  # 摇杆死区
-            MAP_COEFF = 58   # 摇杆映射系数 (根据实际需求调整)
 
-            # 检查lx, ly, rx, ry中是否至少有一个绝对值超过设定值
-            stick_work = any(abs(value) > DEAD_AREA for value in [lx, ly, rx, ry])
-            
-            if stick_work:
-                led.value(not led.value())  # 闪烁led
+            if rs_sw_last is None:
+                rs_sw_last = rs_sw
 
-                v_y = limit_value(ly) / 3000 * MAP_COEFF if abs(ly) > DEAD_AREA else 0
-                v_x = limit_value(lx) / 3000 * MAP_COEFF if abs(lx) > DEAD_AREA else 0
-                v_w = limit_value(-rx) / 3000 * MAP_COEFF if abs(rx) > DEAD_AREA else 0
+            if rs_sw != rs_sw_last:
+                rs_sw_cnt += 1
+                mode = rs_sw_cnt % 3
+                rs_sw_last = rs_sw
 
-                robot.move(v_y, v_x, v_w)  # 调用移动函数
-                
-            else:
-                robot.move(0, 0, 0)
-                led.value(0)
-            
+            if mode == 0:
+
+                DEAD_AREA = 100  # 摇杆死区
+                MAP_COEFF = 58  # 摇杆映射系数 (根据实际需求调整)
+
+                # 检查lx, ly, rx, ry中是否至少有一个绝对值超过设定值
+                stick_work = (
+                    abs(lx) > DEAD_AREA
+                    or abs(ly) > DEAD_AREA
+                    or abs(rx) > (DEAD_AREA - 50)
+                    or abs(ry) > DEAD_AREA
+                )
+
+                if stick_work:
+                    led.value(not led.value())  # 闪烁led
+
+                    v_y = limit_value(ly) / 3000 * MAP_COEFF if abs(ly) > DEAD_AREA else 0
+                    v_x = limit_value(lx) / 3000 * MAP_COEFF if abs(lx) > DEAD_AREA else 0
+                    v_w = limit_value(rx) / 3000 * 30 if abs(rx) > (DEAD_AREA - 50) else 0
+
+                    print(f"摇杆输入 v_y={v_y}, v_x={v_x}, v_w={v_w}")
+
+                    robot.move(v_y, v_x, v_w)  # 调用移动函数
+
+                else:
+                    robot.move(0, 0, 0)
+                    led.value(0)
+
+            elif mode == 1:
+                robot.move(0, 0, 58)
+
+            elif mode == 2:
+                robot.move(0, 0, -58)
+
+
         except ValueError as e:
-            print(f'解析消息失败: {e}')
+            print(f"解析消息失败: {e}")
     else:
-        print('No message received')
-        
+        print("No message received")
+
 
 async def read_uart():
     while True:
@@ -124,6 +161,7 @@ async def read_uart():
             data = uart.read(uart.any())  # 读取所有可用的数据
             process_uart_data(data)  # 处理接收到的数据
         await asyncio.sleep(0.001)  # 等待一段时间再检查
+
 
 def process_uart_data(data):
     # 检查数据长度
@@ -134,17 +172,23 @@ def process_uart_data(data):
     except Exception as e:
         print(f"解包数据时出错: {e}")
 
+
 async def main():
     await asyncio.gather(
         # read_uart(),   # 启动读取 UART 的任务
-        read_espnow(), # 启动读取 espnow 的任务
+        read_espnow(),  # 启动读取 espnow 的任务
     )
+
 
 # 运行主协程
 asyncio.run(main())
 
 # 数据格式
 data_now = {
-    "lx": 0, "ly": 0, "ls_sw": True,
-    "rx": 0, "ry": 0, "rs_sw": False,
+    "lx": 0,
+    "ly": 0,
+    "ls_sw": True,
+    "rx": 0,
+    "ry": 0,
+    "rs_sw": False,
 }
