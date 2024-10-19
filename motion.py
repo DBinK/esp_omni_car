@@ -88,12 +88,12 @@ class Motor:
         @param rate: 速度百分比，范围[-100, 100]
         """
         if rate > 0:
-            pwm_val = self.map_value( rate, (0, 100), self.PWM_LIMIT)
+            pwm_val = int(self.map_value( rate, (0, 100), self.PWM_LIMIT))
             self.motor_dir.value(1)         # 正转
             self.motor_speed.duty(pwm_val)  # 设置速度
 
         elif rate < 0:
-            pwm_val = self.map_value(-rate, (0, 100), self.PWM_LIMIT)
+            pwm_val = int(self.map_value(-rate, (0, 100), self.PWM_LIMIT))
             self.motor_dir.value(0)         # 反转
             self.motor_speed.duty(pwm_val)  # 设置速度
 
@@ -116,9 +116,11 @@ class RobotController:
         SQRT3 = 1.732051
         # 逆运动学解算, 计算每个电机的速度
         R = self.wheel_distance
-        Vl = -(v_x/2) - (v_y*SQRT3) - (v_w*R) # 计算左轮速度
-        Vr = -(v_x/2) + (v_y*SQRT3) + (v_w*R) # 计算右轮速度
-        Vb = v_x + R*v_w                      # 计算后轮速度
+        Vl = -(v_x/2) - (v_y*SQRT3) - (v_w*R)  # 计算左轮速度
+        Vr = -(v_x/2) + (v_y*SQRT3) + (v_w*R)  # 计算右轮速度
+        Vb = v_x + R*v_w                       # 计算后轮速度
+
+        print(f"Vl:{Vl}, Vr:{Vr}, Vb:{Vb}")
 
         # 设置电机速度
         self.motor_l.set_speed(Vl)
@@ -164,7 +166,7 @@ if __name__ == "__main__":
     # robot.motor_r_test(100)
     # robot.motor_b_test(100)
     
-    robot.move(10,0,0)
+    robot.move(100,0,0)
 
     # while True:
     #     robot.go_forward(50)
