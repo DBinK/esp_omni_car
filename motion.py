@@ -57,7 +57,7 @@ class Encoder:
 
 
 class Motor:
-    def __init__(self, speed_pin, dir_pin, PWM_LIMIT=(100, 800)):
+    def __init__(self, speed_pin, dir_pin, PWM_LIMIT=(200, 1000)):
         """
         初始化电机对象
         @param speed_pin: 电机速度控制引脚
@@ -67,20 +67,30 @@ class Motor:
         # 初始化电机控制对象
         self.PWM_LIMIT = PWM_LIMIT
         self.motor_dir = Pin(dir_pin, Pin.OUT)            # 方向控制引脚
-        self.motor_speed = PWM(Pin(speed_pin), freq=500)   # 速度控制引脚
+        self.motor_speed = PWM(Pin(speed_pin), freq=500, duty=0)   # 速度控制引脚
 
     def limit_value(self, value, min_value, max_value):
         """限制输入的值在给定的范围内。"""
         return min(max(value, min_value), max_value)
     
-    def set_speed(self, pwm_val):
-        pwm_val = self.limit_value(pwm_val, *self.PWM_LIMIT) # 星号 * 用于解包
+    def set_speed(self, rate):
+        """
+        设置电机的速度
+        @param rate: 速度百分比，范围[-100, 100]
+        """
+        min_val = self.PWM_LIMIT[0]
+        max_val = self.PWM_LIMIT[1]
+        
+        pwm_val = max_val - int(rate/100 * (max_val - min_val)) 
+        
+        print(f"pwm_val: {pwm_val}")
+
         # 设置电机的速度和方向
         if pwm_val > 0:
-            self.motor_dir.value(0)  # 正转
+            self.motor_dir.value(1)  # 正转
             self.motor_speed.duty(abs(pwm_val))  # 设置速度
         elif pwm_val < 0:
-            self.motor_dir.value(1)  # 反转
+            self.motor_dir.value(0)  # 反转
             self.motor_speed.duty(abs(pwm_val))  # 设置速度
         else:
             self.motor_dir.value(0)  # 随便设置一个方向
@@ -90,9 +100,9 @@ class Motor:
 class RobotController:
     def __init__(self):
         self.wheel_distance = 10 # 轮子距离机器人中心的距离, 作为旋转速度系数
-        self.motor_l = Motor(speed_pin=15, dir_pin=14)  # 左电机
-        self.motor_r = Motor(speed_pin=16, dir_pin=13)  # 右电机
-        self.motor_b = Motor(speed_pin=17, dir_pin=12)  # 后电机
+        self.motor_l = Motor(speed_pin=2, dir_pin=3)  # 左电机
+        self.motor_r = Motor(speed_pin=6, dir_pin=9)  # 右电机
+        self.motor_b = Motor(speed_pin=11, dir_pin=12)  # 后电机
 
     def move(self, v_y, v_x, v_w):
         """
@@ -138,15 +148,31 @@ class RobotController:
     def stop(self):
         self.move(0, 0, 0)
 
+    def motor_l_test(self, pwm_val):
+        self.motor_l.set_speed(pwm_val)
+    
+    def motor_r_test(self, pwm_val):
+        self.motor_r.set_speed(pwm_val)
+
+    def motor_b_test(self, pwm_val):
+        self.motor_b.set_speed(pwm_val)
+
 
 if __name__ == "__main__":
     # 测试所有功能
     robot = RobotController()
-    while True:
-        robot.go_forward(50)
-        robot.go_backward(50)
-        robot.go_left(50)
-        robot.go_right(50)
-        robot.turn_left(50)
-        robot.turn_right(50)
-        robot.stop()
+
+    robot.motor_l_test(100)
+    robot.motor_r_test(100)
+    robot.motor_b_test(100)
+    
+    # robot.move(0,500,0)
+
+    # while True:
+    #     robot.go_forward(50)
+    #     robot.go_backward(50)
+    #     robot.go_left(50)
+    #     robot.go_right(50)
+    #     robot.turn_left(50)
+    #     robot.turn_right(50)
+    #     robot.stop()
