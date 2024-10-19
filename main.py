@@ -13,10 +13,10 @@ from machine import UART, Pin
 
 time.sleep(1)  # 防止点停止按钮后马上再启动导致 Thonny 连接不上
 
-led = Pin(8, Pin.OUT, value=1)
+led = Pin(15, Pin.OUT, value=1)
 
 # 创建串口对象
-uart = UART(1, 115200, rx=21, tx=20)  # 设置串口号1和波特率
+uart = UART(1, 115200, rx=34, tx=36)  # 设置串口号1和波特率
 uart.init(bits=8, parity=None, stop=1)
 uart.write("Hello Omni Bot!")  # 发送一条数据
 
@@ -38,7 +38,7 @@ def stop_btn_callback(pin):
         led.value(not led.value())
         print("停止定时器")  # 不然Thonny无法停止程序
 
-stop_btn = Pin(9, Pin.IN, Pin.PULL_UP)
+stop_btn = Pin(0, Pin.IN, Pin.PULL_UP)
 stop_btn.irq(stop_btn_callback, Pin.IRQ_FALLING)
 
 def limit_value(value, min_value=-3000, max_value=3000):
@@ -62,36 +62,48 @@ def time_diff(last_time=[None]):
 async def read_espnow():
     """读取espnow数据并进行解包处理"""
     while True:
-        print("正在读取espnow数据...")
+        # print("正在读取espnow数据...")
         host, msg = now.recv()  # 读取所有可用的数据
         process_espnow_data(msg)  # 处理接收到的数据
+        
         await asyncio.sleep(0.001)  # 等待一段时间再检查
 
 def process_espnow_data(msg):
     if msg:
         try:
             data = json.loads(msg)  # 将接收到的消息从 JSON 字符串转换为字典
-            # print(data)
+            print(data)
 
             lx = data.get("lx", 0)
             ly = data.get("ly", 0)
             rx = data.get("rx", 0)
             ry = data.get("ry", 0)
-
-            # 检查lx, ly, rx, ry中是否至少有一个绝对值超过40
-            stick_work = any(abs(value) > 40 for value in [lx, ly, rx, ry])
+            
+            lx -= 90
+            ly -= 70
+            rx -= 0
+            ry -= 0
+            
+            print(f"接收到 espnow 数据: lx={lx}, ly={ly}, rx={rx}, ry={ry}")
+            
+            # 检查lx, ly, rx, ry中是否至少有一个绝对值超过
+            stick_work = any(abs(value) > 150 for value in [lx, ly, rx, ry])
+            
             if stick_work:
                 led.value(not led.value())  # 闪烁led
-                if lx != 0 or ly != 0 or rx != 0 or ry != 0:
-                    print(f"接收到 espnow 数据: lx={lx}, ly={ly}, rx={rx}, ry={ry}")
-
-                    # servo_x.set_angle_relative(limit_value(-rx) / 300)  # 灵敏度
-                    # servo_y.set_angle_relative(limit_value(-ry) / 300)
-
+                
+                # if abs(lx) > 0 or abs(ly) > 0 or abs(rx) > 0 or abs(ry) > 0:       
+                #     servo_x.set_angle_relative(limit_value(-rx) / 300)  # 灵敏度
+                #     servo_y.set_angle_relative(limit_value(-ry) / 300)
+                
+            else:
+                led.value(0)
+            
         except ValueError as e:
             print(f'解析消息失败: {e}')
     else:
         print('No message received')
+        
 
 async def read_uart():
     while True:
