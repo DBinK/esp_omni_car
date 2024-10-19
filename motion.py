@@ -89,11 +89,13 @@ class Motor:
         """
         if rate > 0:
             pwm_val = int(self.map_value( rate, (0, 100), self.PWM_LIMIT))
+            pwm_val = self.limit_value(pwm_val, *self.PWM_LIMIT)  # 限制值
             self.motor_dir.value(1)         # 正转
             self.motor_speed.duty(pwm_val)  # 设置速度
 
         elif rate < 0:
             pwm_val = int(self.map_value(-rate, (0, 100), self.PWM_LIMIT))
+            pwm_val = self.limit_value(pwm_val, *self.PWM_LIMIT)  # 限制值
             self.motor_dir.value(0)         # 反转
             self.motor_speed.duty(pwm_val)  # 设置速度
 
@@ -109,18 +111,37 @@ class RobotController:
         self.motor_r = Motor(speed_pin=6, dir_pin=9)  # 右电机
         self.motor_b = Motor(speed_pin=11, dir_pin=12)  # 后电机
 
+    def limit_speed(self, Vl, Vr, Vb):
+        """
+        限制速度，确保每个输入电机的速度值不超过100
+        """
+        max_speed = 100  # 检查是否有速度超过最大值
+        
+        if abs(Vl) > max_speed or abs(Vr) > max_speed or abs(Vb) > max_speed:
+            
+            max_current_speed = max(abs(Vl), abs(Vr), abs(Vb))  # 计算当前速度的最大绝对值
+            scale = max_speed / max_current_speed  # 计算缩放因子
+            Vl *= scale  # 等比例缩小速度
+            Vr *= scale
+            Vb *= scale
+            
+        return Vl, Vr, Vb  # 返回处理后的速度值
+
     def move(self, v_y, v_x, v_w):
         """
         移动机器人，参数为速度控制值 
         """
         SQRT3 = 1.732051
+
         # 逆运动学解算, 计算每个电机的速度
         R = self.wheel_distance
         Vl = -(v_x/2) - (v_y*SQRT3) - (v_w*R)  # 计算左轮速度
         Vr = -(v_x/2) + (v_y*SQRT3) + (v_w*R)  # 计算右轮速度
         Vb = v_x + R*v_w                       # 计算后轮速度
+        print(f"原始输入 Vl:{Vl}, Vr:{Vr}, Vb:{Vb}")
 
-        print(f"Vl:{Vl}, Vr:{Vr}, Vb:{Vb}")
+        Vl, Vr, Vb = self.limit_speed(Vl, Vr, Vb)
+        print(f"缩放处理后 Vl:{Vl}, Vr:{Vr}, Vb:{Vb}")
 
         # 设置电机速度
         self.motor_l.set_speed(Vl)
@@ -166,7 +187,7 @@ if __name__ == "__main__":
     # robot.motor_r_test(100)
     # robot.motor_b_test(100)
     
-    robot.move(100,0,0)
+    robot.move(0,50,0)
 
     # while True:
     #     robot.go_forward(50)
