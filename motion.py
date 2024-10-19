@@ -106,7 +106,7 @@ class Motor:
 
 class RobotController:
     def __init__(self):
-        self.wheel_distance = 10 # 轮子距离机器人中心的距离, 作为旋转速度系数
+        self.wheel_distance = 1.7  # 轮子距离机器人中心的距离, 作为旋转速度系数, 实验得1.7时, 和v_x, v_y, v_w 速度数值调整区间接近[0, 58]
         self.motor_l = Motor(speed_pin=2, dir_pin=3)  # 左电机
         self.motor_r = Motor(speed_pin=6, dir_pin=9)  # 右电机
         self.motor_b = Motor(speed_pin=11, dir_pin=12)  # 后电机
@@ -135,7 +135,7 @@ class RobotController:
 
         # 逆运动学解算, 计算每个电机的速度
         R = self.wheel_distance
-        Vl = -(v_x/2) - (v_y*SQRT3) - (v_w*R)  # 计算左轮速度
+        Vl = -(v_x/2) - (v_y*SQRT3) + (v_w*R)  # 计算左轮速度
         Vr = -(v_x/2) + (v_y*SQRT3) + (v_w*R)  # 计算右轮速度
         Vb = v_x + R*v_w                       # 计算后轮速度
         print(f"原始输入 Vl:{Vl}, Vr:{Vr}, Vb:{Vb}")
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     # robot.motor_r_test(100)
     # robot.motor_b_test(100)
     
-    robot.move(0,50,0)
+    robot.move(0,0,58/2)
 
     # while True:
     #     robot.go_forward(50)

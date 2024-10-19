@@ -11,8 +11,14 @@ import espnow
 import network
 from machine import UART, Pin
 
+from motion import RobotController
+
 time.sleep(1)  # 防止点停止按钮后马上再启动导致 Thonny 连接不上
 
+# 初始化 Omni Bot
+robot = RobotController()
+
+# 初始化 LED
 led = Pin(15, Pin.OUT, value=1)
 
 # 创建串口对象
@@ -86,17 +92,23 @@ def process_espnow_data(msg):
             
             print(f"接收到 espnow 数据: lx={lx}, ly={ly}, rx={rx}, ry={ry}")
             
-            # 检查lx, ly, rx, ry中是否至少有一个绝对值超过
-            stick_work = any(abs(value) > 150 for value in [lx, ly, rx, ry])
+            DEAD_AREA = 120  # 摇杆死区
+            MAP_COEFF = 66   # 摇杆映射系数
+
+            # 检查lx, ly, rx, ry中是否至少有一个绝对值超过设定值
+            stick_work = any(abs(value) > DEAD_AREA for value in [lx, ly, rx, ry])
             
             if stick_work:
                 led.value(not led.value())  # 闪烁led
-                
-                # if abs(lx) > 0 or abs(ly) > 0 or abs(rx) > 0 or abs(ry) > 0:       
-                #     servo_x.set_angle_relative(limit_value(-rx) / 300)  # 灵敏度
-                #     servo_y.set_angle_relative(limit_value(-ry) / 300)
+
+                v_y = limit_value(ly) / 3000 * MAP_COEFF if abs(ly) > DEAD_AREA else 0
+                v_x = limit_value(lx) / 3000 * MAP_COEFF if abs(lx) > DEAD_AREA else 0
+                v_w = limit_value(-rx) / 3000 * MAP_COEFF if abs(rx) > DEAD_AREA else 0
+
+                robot.move(v_y, v_x, v_w)  # 调用移动函数
                 
             else:
+                robot.move(0, 0, 0)
                 led.value(0)
             
         except ValueError as e:
