@@ -93,7 +93,7 @@ def process_espnow_data(msg):
             print(f"接收到 espnow 数据: lx={lx}, ly={ly}, rx={rx}, ry={ry}")
             
             DEAD_AREA = 120  # 摇杆死区
-            MAP_COEFF = 66   # 摇杆映射系数
+            MAP_COEFF = 58   # 摇杆映射系数 (根据实际需求调整)
 
             # 检查lx, ly, rx, ry中是否至少有一个绝对值超过设定值
             stick_work = any(abs(value) > DEAD_AREA for value in [lx, ly, rx, ry])

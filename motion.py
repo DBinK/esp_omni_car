@@ -106,7 +106,6 @@ class Motor:
 
 class RobotController:
     def __init__(self):
-        self.wheel_distance = 1.7  # 轮子距离机器人中心的距离, 作为旋转速度系数, 实验得1.7时, 和v_x, v_y, v_w 速度数值调整区间接近[0, 58]
         self.motor_l = Motor(speed_pin=2, dir_pin=3)  # 左电机
         self.motor_r = Motor(speed_pin=6, dir_pin=9)  # 右电机
         self.motor_b = Motor(speed_pin=11, dir_pin=12)  # 后电机
@@ -129,12 +128,12 @@ class RobotController:
 
     def move(self, v_y, v_x, v_w):
         """
-        移动机器人，参数为速度控制值 
+        移动机器人，参数为速度控制值 , 实验得到: v_x, v_y, v_w 速度数值调整区间约为[-58, 58]
         """
-        SQRT3 = 1.732051
+        SQRT3 = 1.732051  # 根号3
+        R =  1.7  # 轮子距离中心的距离, 作为旋转速度系数, 实验得1.7时, 和v_x, v_y, v_w 速度数值调整区间接近
 
         # 逆运动学解算, 计算每个电机的速度
-        R = self.wheel_distance
         Vl = -(v_x/2) - (v_y*SQRT3) + (v_w*R)  # 计算左轮速度
         Vr = -(v_x/2) + (v_y*SQRT3) + (v_w*R)  # 计算右轮速度
         Vb = v_x + R*v_w                       # 计算后轮速度
