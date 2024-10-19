@@ -73,28 +73,33 @@ class Motor:
         """限制输入的值在给定的范围内。"""
         return min(max(value, min_value), max_value)
     
+    def map_value(self, value, original_block, target_block):
+        """将给定的值映射到给定的目标范围。"""
+        original_min, original_max = original_block
+        target_min, target_max     = target_block
+        # 计算映射后的值
+        mapped_value = target_max + (value - original_min) * (target_min - target_max) / (original_max - original_min)
+
+        return mapped_value
+    
     def set_speed(self, rate):
         """
         设置电机的速度
         @param rate: 速度百分比，范围[-100, 100]
         """
-        min_val = self.PWM_LIMIT[0]
-        max_val = self.PWM_LIMIT[1]
-        
-        pwm_val = max_val - int(rate/100 * (max_val - min_val)) 
-        
-        print(f"pwm_val: {pwm_val}")
+        if rate > 0:
+            pwm_val = self.map_value( rate, (0, 100), self.PWM_LIMIT)
+            self.motor_dir.value(1)         # 正转
+            self.motor_speed.duty(pwm_val)  # 设置速度
 
-        # 设置电机的速度和方向
-        if pwm_val > 0:
-            self.motor_dir.value(1)  # 正转
-            self.motor_speed.duty(abs(pwm_val))  # 设置速度
-        elif pwm_val < 0:
-            self.motor_dir.value(0)  # 反转
-            self.motor_speed.duty(abs(pwm_val))  # 设置速度
+        elif rate < 0:
+            pwm_val = self.map_value(-rate, (0, 100), self.PWM_LIMIT)
+            self.motor_dir.value(0)         # 反转
+            self.motor_speed.duty(pwm_val)  # 设置速度
+
         else:
-            self.motor_dir.value(0)  # 随便设置一个方向
-            self.motor_speed.duty(self.PWM_LIMIT[0])  # 停止电机
+            self.motor_dir.value(0)   # 随便设置一个方向
+            self.motor_speed.duty(0)  # 停止电机
 
 
 class RobotController:
@@ -108,19 +113,12 @@ class RobotController:
         """
         移动机器人，参数为速度控制值 
         """
+        SQRT3 = 1.732051
         # 逆运动学解算, 计算每个电机的速度
         R = self.wheel_distance
-        Vl = -v_y + R * v_w
-        Vr = (
-              v_x * math.cos(math.radians(30))
-            + v_y * math.sin(math.radians(30))
-            + R * v_w
-        )
-        Vb = (
-             -v_x * math.cos(math.radians(30))
-            + v_y * math.sin(math.radians(30))
-            + R * v_w
-        )
+        Vl = -(v_x/2) - (v_y*SQRT3) - (v_w*R) # 计算左轮速度
+        Vr = -(v_x/2) + (v_y*SQRT3) + (v_w*R) # 计算右轮速度
+        Vb = v_x + R*v_w                      # 计算后轮速度
 
         # 设置电机速度
         self.motor_l.set_speed(Vl)
@@ -162,11 +160,11 @@ if __name__ == "__main__":
     # 测试所有功能
     robot = RobotController()
 
-    robot.motor_l_test(100)
-    robot.motor_r_test(100)
-    robot.motor_b_test(100)
+    # robot.motor_l_test(100)
+    # robot.motor_r_test(100)
+    # robot.motor_b_test(100)
     
-    # robot.move(0,500,0)
+    robot.move(10,0,0)
 
     # while True:
     #     robot.go_forward(50)
