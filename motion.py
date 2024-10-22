@@ -47,9 +47,12 @@ class Encoder:
         else:  # 否则，表示A相位下降沿
             self.motor_dir_flag = -1
 
+        # print(f"编码器A相位引脚状态: {self.encoder_a.value()}")
+
         # 计算速度（脉冲数/时间差）
         if dt > 0:  # 防止除以零
             self.speed = self.motor_dir_flag / (dt / 1_000_000)  # 转换为脉冲/秒
+            print(f"针脚 {pin} 速度: {self.speed}")
 
     def get_speed(self):
         # 获取当前速度
@@ -182,11 +185,22 @@ if __name__ == "__main__":
     # 测试所有功能
     robot = RobotController()
 
+    encoder_l = Encoder(4, 1)
+    encoder_r = Encoder(7, 5)
+    encoder_b = Encoder(10, 8)
+
+    # while True:
+    #     print(f"左轮速度:{encoder_l.get_speed()}")
+    #     print(f"右轮速度:{encoder_r.get_speed()}")
+    #     print(f"后轮速度:{encoder_b.get_speed()}\n")
+    #     time.sleep(0.1)
+
+
     # robot.motor_l_test(100)
     # robot.motor_r_test(100)
     # robot.motor_b_test(100)
     
-    robot.move(0,0,1)
+    # robot.move(0,0,1)
 
     # while True:
     #     robot.go_forward(50)
