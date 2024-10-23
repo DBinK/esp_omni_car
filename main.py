@@ -12,8 +12,15 @@ import network
 from machine import UART, Pin
 
 from motion import RobotController
+from servo import Servo
 
 time.sleep(1)  # 防止点停止按钮后马上再启动导致 Thonny 连接不上
+
+# 初始化舵机
+servo_x = Servo(39)
+servo_y = Servo(37)
+servo_x.set_limit(60, 120)
+servo_y.set_limit(60, 120)
 
 # 初始化 Omni Bot
 robot = RobotController()
@@ -104,6 +111,12 @@ def process_espnow_data(msg):
 
             print(f"矫正后数据: lx={lx}, ly={ly}, rx={rx}, ry={ry}")
 
+            servo_x.set_angle(90)
+
+            if abs(ry) > 50:
+                # 舵机控制
+                servo_y.set_angle_relative(ry / 10)
+            
             if mode == 0:
 
                 DEAD_AREA = 20  # 摇杆死区
@@ -120,6 +133,8 @@ def process_espnow_data(msg):
                 if stick_work:
                     led.value(not led.value())  # 闪烁led
 
+
+                    # 底盘控制
                     v_y = limit_value(ly) / 127 * MAP_COEFF if abs(ly) > DEAD_AREA else 0
                     v_x = limit_value(lx) / 127 * MAP_COEFF if abs(lx) > DEAD_AREA else 0
                     v_w = limit_value(-rx) / 127 * 30 if abs(rx) > DEAD_AREA else 0

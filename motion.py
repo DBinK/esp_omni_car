@@ -40,6 +40,7 @@ class Encoder:
 
     def encoder_callback(self, pin):
         # 编码器脉冲计数
+        
         dt = self.time_diff()  # 计算上一次循环和这一次的时间差
 
         if self.encoder_b.value():  # 如果B相位为高，表示A相位上升沿
