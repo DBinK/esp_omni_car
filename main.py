@@ -133,7 +133,6 @@ def process_espnow_data(msg):
                 if stick_work:
                     led.value(not led.value())  # 闪烁led
 
-
                     # 底盘控制
                     v_y = limit_value(ly) / 127 * MAP_COEFF if abs(ly) > DEAD_AREA else 0
                     v_x = limit_value(lx) / 127 * MAP_COEFF if abs(lx) > DEAD_AREA else 0
