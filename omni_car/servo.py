@@ -5,7 +5,7 @@ import time
 class Servo:
     def __init__(
         self,
-        pin,
+        pin,                    # 引脚 
         freq      = 50,         # 频率
         min_us    = 500,        # 最小脉宽
         max_us    = 2500,       # 最大脉宽         

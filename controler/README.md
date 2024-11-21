@@ -4,7 +4,8 @@
 
 配套的遥控程序, 也是用 ESP32S2 做的, 包含:
 
-'boot.py' 一些单片机初始化的代码
+`boot.py` 一些单片机初始化的代码
+
 `main.py` 主程序, 使用 ADC 和 IO中断 获取摇杆信号, 打包成 JSON 后通过 ESP-NOW 发送
 
 使用 MicroPython 编写
