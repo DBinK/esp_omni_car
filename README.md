@@ -4,9 +4,9 @@
 
 目录说明:
 
-`omni_car/` 小车底盘主程序
-
 `controler/` 遥控程序
+
+`omni_car/` 小车底盘主程序
 
 `test/` 一些测试代码
 
